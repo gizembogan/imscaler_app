@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "398829094562",
+    "project_id": "imscaler-79cc9",
+    "storage_bucket": "imscaler-79cc9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:398829094562:android:d1e23b4008c839b2fab9fb",
+        "android_client_info": {
+          "package_name": "com.example.imscaler"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDpZRYjU_4aD_YjlgVCWe_ZPzpd-1u2XSU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
