@@ -1,16 +1,23 @@
-# imscaler
+# ImScaler
 
-A new Flutter project.
+**ImScaler** is a mobile app developed with Flutter that enables users to upload face-containing photos, enhance them using an AI model, and save the results while preserving identity integrity. It focuses on providing a smooth, secure, and user-friendly photo processing experience. This repository only owns the app's code, not the AI model.
 
-## Getting Started
+---
 
-This project is a starting point for a Flutter application.
+## Features
 
-A few resources to get you started if this is your first Flutter project:
+- Secure login & registration with Firebase Authentication  
+- Clean and human-readable error messages  
+- Consistent and responsive user interface
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+---
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## 🛠️ Getting Started
+
+> Requires Flutter SDK ≥ 3.10 and Android SDK ≥ 33.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-username/imscaler.git
+cd imscaler
