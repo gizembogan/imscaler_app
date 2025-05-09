@@ -8,6 +8,8 @@ class ProfileIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return IconButton(
+      iconSize: 35.0,
+      splashRadius: 40.0,
       icon: const Icon(Icons.person, color: Colors.white),
       onPressed: () {
         Navigator.push(context, MaterialPageRoute(builder: (context) => const ProfilePage()));

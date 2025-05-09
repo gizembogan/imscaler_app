@@ -106,8 +106,15 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, size: 32),
+          iconSize: 32,
+          padding: const EdgeInsets.only(left: 16),
+          color: Colors.white,
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
+
       body: BackgroundContainer(
         child: Column(
           children: [

@@ -35,33 +35,32 @@ class _CropPageState extends State<CropPage> {
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: 'Kareyi Seç',
+          toolbarTitle: 'Cropper',
           toolbarColor: Colors.deepPurple,
           toolbarWidgetColor: Colors.white,
           statusBarColor: Colors.deepPurple.shade700,
           backgroundColor: Colors.deepPurple.shade50,
-
-          initAspectRatio: CropAspectRatioPreset.square,
-          lockAspectRatio: true,
-
-          cropFrameColor: Colors.red,
+          hideBottomControls: true,
+          activeControlsWidgetColor: Colors.white,
+          cropFrameColor: Colors.black,
           cropGridColor: Colors.white24,
           dimmedLayerColor: Colors.black54,
-          activeControlsWidgetColor: Colors.white,
+          initAspectRatio: CropAspectRatioPreset.square,
+          lockAspectRatio: true,
         ),
         IOSUiSettings(
-          title: 'Kareyi Seç',
+          title: 'Cropper',
           aspectRatioLockEnabled: true,
           rotateButtonsHidden: true,
           resetButtonHidden: false,
-          doneButtonTitle: 'Tamam',
-          cancelButtonTitle: 'İptal',
+          doneButtonTitle: 'Done',
+          cancelButtonTitle: 'Cancel',
         ),
       ],
     );
 
     if (cropped == null) {
-      Navigator.pop(context);
+      _pickAndCropImage();
       return;
     }
 
@@ -94,7 +93,7 @@ class _CropPageState extends State<CropPage> {
       ),
       body: BackgroundContainer(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 60),
             const Center(
@@ -107,37 +106,61 @@ class _CropPageState extends State<CropPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 20),
-            // Kırpılmış kare gösterimi
-            Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                image: DecorationImage(
-                  image: MemoryImage(_croppedImage!),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PreparingPhotoPage(imageData: _croppedImage!),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 250,
+                    height: 250,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      image: DecorationImage(
+                        image: MemoryImage(_croppedImage!),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                minimumSize: const Size(200, 50),
-                backgroundColor: Colors.white,
-                foregroundColor: Colors.deepPurple,
-              ),
-              child: const Text(
-                "Continue",
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              PreparingPhotoPage(imageData: _croppedImage!),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(200, 50),
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.deepPurple,
+                    ),
+                    child: const Text(
+                      "Continue",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _croppedImage = null;
+                      });
+                      _pickAndCropImage();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(200, 50),
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.deepPurple,
+                    ),
+                    child: const Text(
+                      "Pick Another",
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
