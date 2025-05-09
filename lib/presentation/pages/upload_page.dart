@@ -1,34 +1,11 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import '../widgets/profile_icon.dart';
-import 'preparing_photo_page.dart';
+
 import '../widgets/background_container.dart';
+import '../widgets/profile_icon.dart';
+import 'crop_page.dart';
 
-class UploadPage extends StatefulWidget {
-  const UploadPage({super.key});
-
-  @override
-  State<UploadPage> createState() => _UploadPageState();
-}
-
-class _UploadPageState extends State<UploadPage> {
-  Uint8List? _selectedImage;
-
-  Future<void> _pickImage() async {
-    final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        _selectedImage = _centerCropToSquare(bytes);
-      });
-    }
-  }
-
-  Uint8List _centerCropToSquare(Uint8List bytes) {
-    // cropping will be done with image packet!
-    return bytes;
-  }
+class UploadPage extends StatelessWidget {
+  const UploadPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +14,7 @@ class _UploadPageState extends State<UploadPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: const [
-          ProfileIconButton(),
-        ],
+        actions: const [ProfileIconButton()],
       ),
       body: BackgroundContainer(
         child: Column(
@@ -57,67 +32,28 @@ class _UploadPageState extends State<UploadPage> {
             ),
             Expanded(
               child: Center(
-                child: _selectedImage == null
-                    ? ElevatedButton(
-                  onPressed: _pickImage,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const CropPage()),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 32,
+                      vertical: 16,
+                    ),
                     backgroundColor: Colors.white,
                     foregroundColor: Colors.deepPurple,
                   ),
                   child: const Text(
                     "UPLOAD A PHOTO",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                )
-                    : Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 250,
-                      height: 250,
-                      decoration: BoxDecoration(
-                        image: DecorationImage(
-                          image: MemoryImage(_selectedImage!),
-                          fit: BoxFit.cover,
-                        ),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    ElevatedButton(
-                      onPressed: _pickImage,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(200, 50),
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.deepPurple,
-                      ),
-                      child: const Text(
-                        "Pick Another",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PreparingPhotoPage(imageData: _selectedImage!),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(200, 50),
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.deepPurple,
-                      ),
-                      child: const Text(
-                        "Continue",
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
                 ),
               ),
             ),
