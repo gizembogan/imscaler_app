@@ -1,9 +1,10 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../widgets/background_container.dart';
 
 class ProfilePage extends StatefulWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({Key? key}) : super(key: key);
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -15,86 +16,101 @@ class _ProfilePageState extends State<ProfilePage> {
   final TextEditingController _newPasswordController = TextEditingController();
   String? _message;
 
-  Future<void> _reauthenticate() async {
-    final user = _auth.currentUser;
+  Future<void> _reauthenticate(String currentPassword) async {
+    final user = _auth.currentUser!;
     final cred = EmailAuthProvider.credential(
-      email: user!.email!,
-      password: _currentPasswordController.text.trim(),
+      email: user.email!,
+      password: currentPassword,
     );
-
-    try {
-      await user.reauthenticateWithCredential(cred);
-    } on FirebaseAuthException catch (e) {
-      final code = e.code.toLowerCase();
-
-      if (code.contains('wrong-password') || code.contains('invalid-credential')) {
-        setState(() {
-          _message = "Incorrect current password.";  // does not work !
-        });
-      } else {
-        setState(() {
-          _message = "Incorrect current password.";
-        });
-      }
-
-      await Future.delayed(const Duration(seconds: 3));
-      if (mounted) setState(() => _message = null);
-      throw Exception();
-    }
+    await user.reauthenticateWithCredential(cred);
   }
 
   Future<void> _updatePassword() async {
     final currentPassword = _currentPasswordController.text.trim();
     final newPassword = _newPasswordController.text.trim();
 
-    _currentPasswordController.clear();
-    _newPasswordController.clear();
-
     try {
-      await _reauthenticate();
+      await _reauthenticate(currentPassword);
+    } on FirebaseAuthException {
+      _showMessage("Incorrect current password.");
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
+      return;
     } catch (_) {
+      _showMessage("Incorrect current password.");
+      _currentPasswordController.clear();
+      _newPasswordController.clear();
       return;
     }
 
-    if (newPassword.length < 6) {
-      setState(() {
-        _message = "Password must be at least 6 characters.";
-      });
-      await Future.delayed(const Duration(seconds: 3));
-      if (mounted) setState(() => _message = null);
+    // Validate new password length (must be between 6 and 10)
+    if (newPassword.length < 6 || newPassword.length > 10) {
+      _showMessage("New password must be 6-10 characters length");
+      _newPasswordController.clear();
       return;
     }
 
     if (currentPassword == newPassword) {
-      setState(() {
-        _message = "New password cannot be the same as current password.";
-      });
-      await Future.delayed(const Duration(seconds: 3));
-      if (mounted) setState(() => _message = null);
+      _showMessage("New password cannot be the same as current password.");
+      _newPasswordController.clear();
       return;
     }
 
     try {
       await _auth.currentUser!.updatePassword(newPassword);
-      setState(() {
-        _message = "Password updated successfully!";
-      });
-      await Future.delayed(const Duration(seconds: 3));
-      if (mounted) setState(() => _message = null);
+      _showMessage("Password updated successfully!");
+    } on FirebaseAuthException catch (e) {
+      _showMessage("Failed to update password: ${e.message}");
     } catch (e) {
-      setState(() {
-        _message = "Failed to update password: $e";
-      });
-      await Future.delayed(const Duration(seconds: 3));
-      if (mounted) setState(() => _message = null);
+      _showMessage("Failed to update password: $e");
     }
+
+    _currentPasswordController.clear();
+    _newPasswordController.clear();
   }
 
-
+  void _showMessage(String msg) {
+    setState(() => _message = msg);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _message = null);
+    });
+  }
 
   Future<void> _logout() async {
     await _auth.signOut();
     Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+  }
+
+  Widget _buildInputField(String label, TextEditingController controller, {bool obscureText = false}) {
+    return TextField(
+      controller: controller,
+      obscureText: obscureText,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Colors.white),
+        filled: true,
+        fillColor: Colors.white.withOpacity(0.3),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _roundedButton(String label, VoidCallback onPressed) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        minimumSize: const Size(200, 45),
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.deepPurple,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      ),
+      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
+    );
   }
 
   @override
@@ -108,13 +124,11 @@ class _ProfilePageState extends State<ProfilePage> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, size: 32),
-          iconSize: 32,
           padding: const EdgeInsets.only(left: 16),
           color: Colors.white,
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-
       body: BackgroundContainer(
         child: Column(
           children: [
@@ -148,13 +162,21 @@ class _ProfilePageState extends State<ProfilePage> {
                       _roundedButton("Logout", _logout),
                       const SizedBox(height: 16),
                       if (_message != null)
-                        Text(
-                          _message!,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                        Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.lightBlueAccent.withOpacity(0.4),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            _message!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                     ],
@@ -165,38 +187,6 @@ class _ProfilePageState extends State<ProfilePage> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildInputField(String label, TextEditingController controller, {bool obscureText = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.white),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.3),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.white),
-        ),
-      ),
-    );
-  }
-
-  Widget _roundedButton(String label, VoidCallback onPressed) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        minimumSize: const Size(200, 45),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.deepPurple,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      ),
-      child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
     );
   }
 }
