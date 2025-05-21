@@ -1,9 +1,10 @@
 import 'dart:typed_data';
-import 'dart:io'; // Import for Platform
+// import 'dart:io'; // No longer needed for Platform checks here
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle; // Added for rootBundle
+// import 'package:flutter/services.dart' show rootBundle; // No longer loading model here
 import 'package:image/image.dart' as img;
 import 'package:onnxruntime/onnxruntime.dart';
+import 'package:imscaler/services/onnx_model_service.dart'; // Import the service
 import 'photo_page.dart';
 import '../widgets/background_container.dart';
 
@@ -20,8 +21,9 @@ class _PreparingPhotoPageState extends State<PreparingPhotoPage>
   late AnimationController _controller;
   late Animation<double> _shimmerAnimation;
   Uint8List? _processedImage;
-  OrtSession? _session;
-  OrtEnv? _env;
+  // OrtSession? _session; // Session now managed by OnnxModelService
+  // OrtEnv? _env; // Env now managed by OnnxModelService
+  final OnnxModelService _modelService = OnnxModelService(); // Get instance of the service
 
   @override
   void initState() {
@@ -35,53 +37,38 @@ class _PreparingPhotoPageState extends State<PreparingPhotoPage>
     _shimmerAnimation = Tween<double>(begin: -1.0, end: 2.0).animate(
       CurvedAnimation(parent: _controller, curve: Curves.linear),
     );
-    _loadModelAndProcessImage();
+    // _loadModelAndProcessImage(); // Model is loaded by SplashScreen, just process image
+    _initProcess();
   }
 
-  Future<void> _loadModelAndProcessImage() async {
-    try {
-      print("PreparingPhotoPage: Starting _loadModelAndProcessImage with onnxruntime...");
-      
-      _env = OrtEnv.instance;
-      final sessionOptions = OrtSessionOptions();
-      print("PreparingPhotoPage: Session options created. Will use default provider.");
-
-      // Load model from assets as bytes
-      print("PreparingPhotoPage: About to load model asset 'assets/models/model_int8_static.onnx'...");
-      final modelBytes = await rootBundle.load('assets/models/model_int8_static.onnx');
-      print("PreparingPhotoPage: Model asset loaded. Byte length: ${modelBytes.lengthInBytes}");
-      
-      print("PreparingPhotoPage: About to create ONNX session from buffer...");
-      _session = OrtSession.fromBuffer(modelBytes.buffer.asUint8List(), sessionOptions);
-      print("PreparingPhotoPage: ONNX Session created successfully with onnxruntime.");
-
-      // Optionally, print input/output names and shapes
-      // final inputNames = _session!.inputNames;
-      // final outputNames = _session!.outputNames;
-      // print("Input names: $inputNames");
-      // print("Output names: $outputNames");
-      // if (inputNames.isNotEmpty) {
-      //   // For version 1.4.1, getting detailed input type info might be limited.
-      //   // Focus on names and assume shape based on model knowledge.
-      // }
-
-      setState(() {}); // To reflect model loaded state via _session != null
-      await _processImage();
-    } catch (e, s) {
-      print("PreparingPhotoPage: Failed to load model or process image with onnxruntime. Error: $e");
-      print("PreparingPhotoPage: Stack trace: $s");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to load ONNX model: $e")));
-        Navigator.pop(context);
+  Future<void> _initProcess() async {
+    // Ensure model is loaded before processing
+    if (!_modelService.isModelLoaded) {
+      print("PreparingPhotoPage: Model not loaded yet by service. Waiting or handling error...");
+      // Attempt to load if not loaded, though SplashScreen should handle this.
+      // This is a fallback.
+      await _modelService.loadModel(); 
+      if (!_modelService.isModelLoaded) { // Check again after attempting to load
+         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Model not loaded. Please restart app.")));
+         if (mounted) Navigator.pop(context);
+         return;
       }
     }
-    print("PreparingPhotoPage: Finished _loadModelAndProcessImage with onnxruntime.");
+    await _processImage();
   }
+
+  // Future<void> _loadModelAndProcessImage() async { // This method is removed/refactored
+  // }
 
   Future<void> _processImage() async {
     print("PreparingPhotoPage: Starting _processImage with onnxruntime...");
-    if (_session == null) {
-      print("PreparingPhotoPage: ONNX Session is not initialized. Cannot process image.");
+    
+    if (_modelService.session == null || !_modelService.isModelLoaded) {
+      print("PreparingPhotoPage: ONNX Session from service is not initialized. Cannot process image.");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Model not available. Please try again.")));
+        Navigator.pop(context);
+      }
       return;
     }
 
@@ -117,11 +104,10 @@ class _PreparingPhotoPageState extends State<PreparingPhotoPage>
     }
 
     final inputOrt = OrtValueTensor.createTensorWithDataList(inputData, inputShape);
-    // CRITICAL: Replace 'serving_default_input:0' with your model's actual input name.
-    // You can find this using Netron or by inspecting _session!.inputNames.
-    final String inputName = "input"; // Changed to use the name from ONNX export
+    
+    final String inputName = "input"; 
     final inputs = {inputName: inputOrt};
-    // Corrected: Print the inputShape variable directly
+    
     print("PreparingPhotoPage: Input tensor prepared for ONNX. Name: $inputName, Shape: $inputShape");
 
     print("PreparingPhotoPage: Output tensor will be inferred by ONNX runtime.");
@@ -129,11 +115,9 @@ class _PreparingPhotoPageState extends State<PreparingPhotoPage>
     print("PreparingPhotoPage: Running inference with onnxruntime...");
     try {
       final runOptions = OrtRunOptions();
-      // Corrected: Changed type to List<OrtValue?>?
-      final List<OrtValue?>? outputs = await _session!.runAsync(runOptions, inputs); 
+      // Use session from the service
+      final List<OrtValue?>? outputs = await _modelService.session!.runAsync(runOptions, inputs); 
       
-      // CRITICAL: Access output by index.
-      // Assuming the desired output is the first one. Verify with Netron or _session!.outputNames.
       if (outputs == null || outputs.isEmpty || outputs[0] == null) {
         throw Exception("ONNX model output is null or empty.");
       }
@@ -250,8 +234,8 @@ class _PreparingPhotoPageState extends State<PreparingPhotoPage>
   @override
   void dispose() {
     _controller.dispose();
-    _session?.release();
-    _env?.release();
+    // _session?.release(); // Service handles session lifecycle
+    // _env?.release(); // Service handles env lifecycle
     super.dispose();
   }
 
@@ -326,9 +310,11 @@ class _PreparingPhotoPageState extends State<PreparingPhotoPage>
                           color: Colors.black.withOpacity(0.5),
                         ),
                       ),
-                      if (_processedImage == null && _session != null) // Show progress only while processing and model is loaded
+                      // if (_processedImage == null && _session != null) // Check service model loaded state
+                      if (_processedImage == null && _modelService.isModelLoaded && _modelService.session != null)
                         const CircularProgressIndicator()
-                      else if (_session == null) // Show loading indicator for model
+                      // else if (_session == null) // Check service model loaded state
+                      else if (!_modelService.isModelLoaded)
                          Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
