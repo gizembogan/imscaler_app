@@ -22,7 +22,7 @@ dependencies:
   image_cropper: ^9.1.0
   permission_handler: ^11.0.0
   image: ^4.0.17
-  tflite_flutter: ^0.11.0
+  onnxruntime: ^1.4.1
 
 dev_dependencies:
   flutter_test:
@@ -39,7 +39,7 @@ flutter:
   assets:
     - assets/wallpaper.webp
     - assets/app_icon.png
-    - assets/models/upscaler.tflite
+    - assets/models/model_int8_static.onnx
 
   uses-material-design: true
 
