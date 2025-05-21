@@ -40,7 +40,6 @@ android {
 }
 
 dependencies {
-    implementation("org.tensorflow:tensorflow-lite-select-tf-ops:2.14.0")
     implementation("com.google.android.gms:play-services-ads-identifier:18.2.0")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation("com.google.android.gms:play-services-auth-base:18.1.0")
