@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:image/image.dart' as img;
 
 import '../widgets/background_container.dart';
 import '../widgets/profile_icon.dart';
@@ -18,45 +17,16 @@ class PhotoPage extends StatefulWidget {
 }
 
 class _PhotoPageState extends State<PhotoPage> {
-  Uint8List? _mergedImage;
   bool _isSaving = false;
   bool _isSaved = false;
 
   @override
   void initState() {
     super.initState();
-    _mergeRedSquare(widget.imageData);
   }
 
-  Future<void> _mergeRedSquare(Uint8List bytes) async {
-    final original = img.decodeImage(bytes);
-    if (original == null) return;
-
-    const int squareSize = 80;
-    final cx = original.width ~/ 2;
-    final cy = original.height ~/ 2;
-    final half = squareSize ~/ 2;
-    final l = cx - half;
-    final t = cy - half;
-    final r = cx + half;
-    final b = cy + half;
-    final red = img.ColorRgb8(255, 0, 0);
-
-    for (var x = l; x <= r; x++) {
-      if (t >= 0 && t < original.height) original.setPixel(x, t, red);
-      if (b >= 0 && b < original.height) original.setPixel(x, b, red);
-    }
-    for (var y = t; y <= b; y++) {
-      if (l >= 0 && l < original.width) original.setPixel(l, y, red);
-      if (r >= 0 && r < original.width) original.setPixel(r, y, red);
-    }
-
-    final merged = Uint8List.fromList(img.encodeJpg(original));
-    setState(() => _mergedImage = merged);
-  }
-
-  Future<void> _saveImageWithRedSquare() async {
-    final data = _mergedImage ?? widget.imageData;
+  Future<void> _saveProcessedImage() async {
+    final data = widget.imageData;
     if (Platform.isAndroid &&
         !(await Permission.manageExternalStorage.request().isGranted)) return;
     if (!Platform.isAndroid &&
@@ -83,7 +53,7 @@ class _PhotoPageState extends State<PhotoPage> {
   }
 
   void _openFullScreenImage() {
-    final display = _mergedImage ?? widget.imageData;
+    final display = widget.imageData;
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -149,21 +119,23 @@ class _PhotoPageState extends State<PhotoPage> {
                 children: [
                   GestureDetector(
                     onTap: _openFullScreenImage,
-                    child: _mergedImage == null
-                        ? const SizedBox(
-                      width: 250,
-                      height: 250,
-                      child: Center(child: CircularProgressIndicator()),
-                    )
-                        : ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.memory(
-                        _mergedImage!,
-                        width: 250,
-                        height: 250,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    child: widget.imageData.isNotEmpty
+                        ? ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: Image.memory(
+                              widget.imageData,
+                              width: 250,
+                              height: 250,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : const SizedBox(
+                            width: 250,
+                            height: 250,
+                            child: Center(
+                                child: Text("Image not available",
+                                    style: TextStyle(color: Colors.white))),
+                          ),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -199,7 +171,7 @@ class _PhotoPageState extends State<PhotoPage> {
                           size: 30,
                         ),
                         onPressed:
-                        _isSaving ? null : () => _saveImageWithRedSquare(),
+                        _isSaving ? null : () => _saveProcessedImage(),
                       ),
                     ],
                   ),
