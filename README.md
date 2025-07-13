@@ -1,23 +1,20 @@
 # ImScaler
 
-**ImScaler** is a mobile app developed with Flutter that enables users to upload face-containing photos, enhance them using an AI model, and save the results while preserving identity integrity. It focuses on providing a smooth, secure, and user-friendly photo processing experience. This repository only owns the app's code, not the AI model.
+**ImScaler** is a mobile app developed with Flutter that enables users to upload face-containing photos, enhance them using an AI model, and save the results while preserving identity integrity. It focuses on providing a smooth, secure, and user-friendly photo processing experience.
 
----
+The goal is to provide a **real-time, privacy-aware image super-resolution** pipeline that enhances facial images from 96×96 to 512×512 resolution **while preserving the subject’s identity**. This mobile application integrates the lightweight ONNX model and performs all inference **locally on the device** without requiring cloud access.
 
-## Features
+## 📱 Key Features
 
-- Secure login & registration with Firebase Authentication  
-- Clean and human-readable error messages  
-- Consistent and responsive user interface
+- Image selection from gallery with cropping
+- On-device ONNX model inference (96×96 → 512×512 face upscaling)
+- Identity-preserving output via pre-trained FaceNet embedding loss
+- Firebase Authentication integration
+- Minimal and responsive Flutter UI for smooth UX
 
----
+## 🧠 Under the Hood
 
-## 🛠️ Getting Started
-
-> Requires Flutter SDK ≥ 3.10 and Android SDK ≥ 33.
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/your-username/imscaler.git
-cd imscaler
+- **Model**: Lightweight UNet trained with pixel-wise MSE, VGG perceptual loss, and identity-aware FaceNet embedding loss
+- **Deployment**: Converted to quantized INT8 ONNX format for edge deployment
+- **Inference Time**: ~100 ms per image on mobile-class devices
+- **Privacy**: No images are uploaded – all computations are fully offline
